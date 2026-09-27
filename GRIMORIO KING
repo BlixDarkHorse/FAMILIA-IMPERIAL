@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GRIMORIO KING - WEB EDITION</title>
+    <style>
+        :root {
+            --bg-primary: #0a0412;
+            --bg-secondary: #150926;
+            --bg-editor: #0d0517;
+            --accent-pink: #ff007f;
+            --accent-cyan: #00f3ff;
+            --text-main: #e2d6f5;
+            --border-glow: rgba(255, 0, 127, 0.4);
+            --font-code: 'Consolas', 'Fira Code', 'Monaco', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* BARRA SUPERIOR / HERRAMIENTAS */
+        .toolbar {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--accent-pink);
+            box-shadow: 0 0 15px var(--border-glow);
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .brand-title {
+            font-weight: 900;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            color: var(--accent-pink);
+            text-shadow: 0 0 8px var(--accent-pink);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: rgba(255, 0, 127, 0.1);
+            border: 1px solid var(--accent-pink);
+            color: #23212100;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button:hover {
+            background: var(--accent-pink);
+            color: #000;
+            box-shadow: 0 0 12px var(--accent-pink);
+        }
+
+        button.btn-cyan {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 243, 255, 0.1);
+        }
+
+        button.btn-cyan:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 12px var(--accent-cyan);
+        }
+
+        /* WORKSPACE PRINCIPAL DIVIDIDO */
+        .workspace {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 50px);
+            position: relative;
+        }
+
+        /* EDITOR PANEL */
+        .editor-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid rgba(255, 0, 127, 0.2);
+            background: var(--bg-editor);
+        }
+
+        /* PESTAÑAS (QTabWidget) */
+        .tab-bar {
+            display: flex;
+            background: var(--bg-primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: #8a7b9c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab.active {
+            background: var(--bg-editor);
+            color: var(--accent-cyan);
+            border-bottom: 2px solid var(--accent-cyan);
+        }
+
+        .tab .close-tab {
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .tab .close-tab:hover {
+            background: var(--accent-pink);
+            color: rgba(17, 6, 6, 0.285);
+        }
+
+        /* ÁREA DE CÓDIGO CON NÚMEROS DE LÍNEA */
+        .code-container {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .line-numbers {
+            width: 45px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #524366;
+            font-family: var(--font-code);
+            font-size: 0.9rem;
+            padding: 10px 5px;
+            text-align: right;
+            line-height: 1.5;
+            user-select: none;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        textarea.code-editor {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #f0e6ff3e;
+            font-family: var(--font-code);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            padding: 10px;
+            resize: none;
+            white-space: pre;
+            overflow-y: scroll;
+            tab-size: 4;
+            user-select: text;
+        }
+
+        /* PREVIEW PANEL (EJECUCIÓN) */
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1302023b;
+        }
+
+        .preview-header {
+            background: var(--bg-secondary);
+            color: var(--accent-cyan);
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.3);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        iframe#runner-frame {
+            width: 100%;
+            flex: 1;
+            border: none;
+            background: #00000067;
+        }
+
+        /* CONSOLA DE SALIDA */
+        .console-output {
+            height: 120px;
+            background: #05020a;
+            border-top: 1px solid var(--accent-pink);
+            color: #00ff66;
+            font-family: var(--font-code);
+            font-size: 0.8rem;
+            padding: 8px;
+            overflow-y: auto;
+            user-select: text;
+        }
+
+        .console-entry {
+            margin-bottom: 4px;
+        }
+
+        .console-entry.error {
+            color: #ff3366;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div class="brand-title">🕷 GRIMORIO KING :: WEB ENGINE</div>
+        <div class="btn-group">
+            <button onclick="createNewTab()">📄 Nuevo</button>
+            <button onclick="openFileFromDisk()">📂 Abrir Archivo</button>
+            <button onclick="saveFileToDisk()">💾 Guardar</button>
+            <button class="btn-cyan" onclick="executeCode()">🔥 EJECUTAR CÓDIGO</button>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="editor-panel">
+            <div class="tab-bar" id="tab-bar">
+                </div>
+            <div class="code-container">
+                <div class="line-numbers" id="line-numbers">1</div>
+                <textarea class="code-editor" id="code-editor" spellcheck="false" placeholder="Escribe código HTML/JS/CSS aquí..."></textarea>
+            </div>
+            <div class="console-output" id="console-output">
+                <div class="console-entry">[SISTEMA] Motor listo. Abre un archivo local o escribe código para probar al instante.</div>
+            </div>
+        </div>
+
+        <div class="preview-panel">
+            <div class="preview-header">
+                <span>👁‍🗨 VISTA DE EJECUCIÓN EN TIEMPO REAL</span>
+                <span id="preview-status">Standby</span>
+            </div>
+            <iframe id="runner-frame"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // ESTADO GLOBAL DE PESTAÑAS Y ARCHIVOS
+        let tabs = [];
+        let activeTabId = null;
+        let fileHandleGlobal = null;
+
+        const codeEditor = document.getElementById('code-editor');
+        const lineNumbers = document.getElementById('line-numbers');
+        const tabBar = document.getElementById('tab-bar');
+        const runnerFrame = document.getElementById('runner-frame');
+        const consoleOutput = document.getElementById('console-output');
+
+        // INICIALIZACIÓN
+        window.onload = () => {
+            createNewTab('index.html', '<h1>Hola Mundo desde Grimorio King</h1>\n<script>\n  console.log("¡CÓDIGO EJECUTADO CON ÉXITO!");\n<\/script>');
+        };
+
+        // ACTUALIZACIÓN DE NÚMEROS DE LÍNEA
+        codeEditor.addEventListener('input', () => {
+            updateLineNumbers();
+            if (activeTabId !== null) {
+                const currentTab = tabs.find(t => t.id === activeTabId);
+                if (currentTab) currentTab.content = codeEditor.value;
+            }
+        });
+
+        codeEditor.addEventListener('scroll', () => {
+            lineNumbers.scrollTop = codeEditor.scrollTop;
+        });
+
+        function updateLineNumbers() {
+            const lines = codeEditor.value.split('\n').length;
+            lineNumbers.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('<br>');
+        }
+
+        // GESTIÓN DE PESTAÑAS
+        function createNewTab(name = 'Sin_Titulo.html', content = '') {
+            const id = Date.now();
+            const tabObj = { id, name, content, fileHandle: null };
+            tabs.push(tabObj);
+            renderTabs();
+            switchTab(id);
+        }
+
+        function renderTabs() {
+            tabBar.innerHTML = '';
+            tabs.forEach(tab => {
+                const tabEl = document.createElement('div');
+                tabEl.className = `tab ${tab.id === activeTabId ? 'active' : ''}`;
+                tabEl.innerHTML = `
+                    <span>${tab.name}</span>
+                    <span class="close-tab" onclick="closeTab(${tab.id}, event)">×</span>
+                `;
+                tabEl.onclick = () => switchTab(tab.id);
+                tabBar.appendChild(tabEl);
+            });
+        }
+
+        function switchTab(id) {
+            activeTabId = id;
+            const currentTab = tabs.find(t => t.id === id);
+            if (currentTab) {
+                codeEditor.value = currentTab.content;
+                fileHandleGlobal = currentTab.fileHandle;
+                updateLineNumbers();
+                renderTabs();
+            }
+        }
+
+        function closeTab(id, event) {
+            event.stopPropagation();
+            if (tabs.length === 1) return;
+            tabs = tabs.filter(t => t.id !== id);
+            if (activeTabId === id) {
+                switchTab(tabs[tabs.length - 1].id);
+            } else {
+                renderTabs();
+            }
+        }
+
+        // ACCESO AL SISTEMA DE ARCHIVOS REAL (File System Access API)
+        async function openFileFromDisk() {
+            try {
+                if ('showOpenFilePicker' in window) {
+                    const [handle] = await window.showOpenFilePicker();
+                    const file = await handle.getFile();
+                    const text = await file.text();
+                    
+                    const id = Date.now();
+                    tabs.push({ id, name: file.name, content: text, fileHandle: handle });
+                    renderTabs();
+                    switchTab(id);
+                    logConsole(`[SISTEMA] Archivo cargado: ${file.name}`);
+                } else {
+                    alert("Tu navegador no soporta File System Access API.");
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') logConsole(`[ERROR] ${err.message}`, true);
+            }
+        }
+
+        async function saveFileToDisk() {
+            const currentTab = tabs.find(t => t.id === activeTabId);
+            if (!currentTab) return;
+
+            try {
+                if (currentTab.fileHandle) {
+                    const writable = await currentTab.fileHandle.createWritable();
+                    await writable.write(codeEditor.value);
+                    await writable.close();
+                    logConsole(`[SISTEMA] Archivo guardado directamente en disco: ${currentTab.name}`);
+                } else if ('showSaveFilePicker' in window) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: currentTab.name
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(codeEditor.value);
+                    await writable.close();
+                    
+                    currentTab.fileHandle = handle;
+                    currentTab.name = handle.name;
+                    renderTabs();
+                    logConsole(`[SISTEMA] Archivo guardado como: ${handle.name}`);
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') logConsole(`[ERROR] ${err.message}`, true);
+            }
+        }
+
+        // EJECUCIÓN EN TIEMPO REAL (Insta-Runner)
+        function executeCode() {
+            const code = codeEditor.value;
+            
+            // Inyectar captura de consola dentro del IFRAME para redireccionar logs al panel
+            const consoleInterceptor = `
+                <script>
+                    const _log = console.log;
+                    const _error = console.error;
+                    console.log = (...args) => {
+                        window.parent.postMessage({ type: 'LOG', data: args.join(' ') }, '*');
+                        _log.apply(console, args);
+                    };
+                    console.error = (...args) => {
+                        window.parent.postMessage({ type: 'ERROR', data: args.join(' ') }, '*');
+                        _error.apply(console, args);
+                    };
+                <\/script>
+            `;
+
+            runnerFrame.srcdoc = consoleInterceptor + code;
+            document.getElementById('preview-status').innerText = 'Ejecutando...';
+            logConsole('[EJECUCIÓN] Código compilado y desplegado en el visor interno.');
+        }
+
+        // CAPTURA DE MENSAJES DEL IFRAME
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'LOG') {
+                logConsole(`[SALIDA JS]: ${e.data.data}`);
+            } else if (e.data && e.data.type === 'ERROR') {
+                logConsole(`[ERROR JS]: ${e.data.data}`, true);
+            }
+        });
+
+        function logConsole(msg, isError = false) {
+            const div = document.createElement('div');
+            div.className = `console-entry ${isError ? 'error' : ''}`;
+            div.innerText = msg;
+            consoleOutput.appendChild(div);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+    </script>
+</body>
+</html>
